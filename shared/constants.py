@@ -1,0 +1,3 @@
+DB_NAME = "tracker.db"
+PIECE_SIZE = 512 * 1024  
+TRACKER_PORT = 5500
