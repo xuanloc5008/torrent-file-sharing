@@ -11,7 +11,7 @@ from database import add_file
 
 PIECE_DIR = "pieces"
 PIECE_SIZE = 1
-PEER_PORT = 6881  
+PEER_PORT = 6882  
 TRACKER_URL = "http://localhost:5500/announce"  
 BUFFER_SIZE = 1024
 
