@@ -70,6 +70,8 @@ def publish_file():
         data = request.json
         file_name = data.get("file_name")
         file_size = data.get("file_size")
+        peer_address = data.get("peer_address")
+        peer_port = data.get("peer_port")
         if not file_name or not file_size:
             return jsonify({
                 "success": False,
@@ -90,7 +92,13 @@ def publish_file():
 
         insert_query = "INSERT INTO files (info_hash, file_name, file_size) VALUES (%s, %s, %s)"
         execute_query(insert_query, (info_hash, file_name, file_size))
-
+       # Update the 'files' table with the new peer's address and port
+        update_query = """
+            UPDATE files
+            SET peer_address = %s, peer_port = %s
+            WHERE info_hash = %s
+        """
+        execute_query(update_query, (peer_address, peer_port, info_hash))
         return jsonify({
             "success": True,
             "message": "File published successfully",
@@ -130,7 +138,6 @@ def announce_peer():
 
         insert_query = "INSERT INTO peers (info_hash, peer_address, peer_port) VALUES (%s, %s, %s)"
         execute_query(insert_query, (info_hash, peer_address, peer_port))
-
         return jsonify({
             "success": True,
             "message": "Peer announced successfully",

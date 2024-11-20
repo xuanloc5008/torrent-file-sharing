@@ -2,24 +2,30 @@ import os
 import socket
 import threading
 import requests
+import time
 
 SERVER_URL = 'http://127.0.0.1:5000'
 PEER_PORT = 6000
-SHARED_FILES_DIR = 'shared_files'
+SHARED_FILES_DIR = '/Users/xuanloc/Documents/GitHub/torrent-file-sharing/client2/shared_files'
 
 def start_peer_server(peer_port):
     def handle_client(client_socket):
         request = client_socket.recv(1024).decode()
+        print(request)
         file_name, chunk_index = request.split(",")
         chunk_index = int(chunk_index)
-
         file_path = os.path.join(SHARED_FILES_DIR, file_name)
-        with open(file_path, 'r') as f:
-            chunks = f.readlines()  
-            chunk_data = chunks[chunk_index].strip()
+        try:
+            with open(file_path, 'r') as f:
+                chunks = f.readlines()  
+                chunk_data = chunks[chunk_index].strip()
 
-        client_socket.send(chunk_data.encode())
-        client_socket.close()
+            client_socket.send(chunk_data.encode())
+            client_socket.close()
+        except:
+            print("Index is out of range!")
+            time.sleep(1)
+            return 0
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(("0.0.0.0", peer_port))
