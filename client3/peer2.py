@@ -5,7 +5,7 @@ import requests
 
 SERVER_URL = 'http://127.0.0.1:5000'
 PEER_PORT = 6002
-SHARED_FILES_DIR = '/Users/xuanloc/Documents/GitHub/torrent-file-sharing/client2/shared_files'
+SHARED_FILES_DIR = '/Users/xuanloc/Documents/GitHub/torrent-file-sharing/client3/shared_files'
 
 download_threads = []
 downloaded_chunks = {}
