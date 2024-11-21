@@ -4,7 +4,7 @@ import threading
 import requests
 
 SERVER_URL = 'http://127.0.0.1:5000'
-PEER_PORT = 6002
+PEER_PORT = 6001
 SHARED_FILES_DIR = '/Users/xuanloc/Documents/GitHub/torrent-file-sharing/client2/shared_files'
 
 download_threads = []
@@ -109,8 +109,7 @@ def download_file(info_hash):
     file_info = data['file']
     file_name = file_info['file_name']
     file_size = file_info['file_size']  
-    # num_chunks = (file_size // chunk_size) + (1 if file_size % chunk_size else 0)
-    num_chunks = 3
+    num_chunks = (file_size // chunk_size) + (1 if file_size % chunk_size else 0)
     response = requests.get(f"{SERVER_URL}/file/peers", params={"info_hash": info_hash})
     if response.status_code != 200:
         print(f"Error fetching peers for info_hash {info_hash}: {response.json()}")

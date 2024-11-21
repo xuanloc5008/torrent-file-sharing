@@ -51,7 +51,6 @@ def upload_file_to_server(file_name, file_size):
         print(f"File '{file_name}' published successfully.")
     else:
         print(f"Failed to publish file: {response.json()}")
-
 def split_file(file_path):
     chunks = []
 
@@ -69,7 +68,7 @@ def upload_and_split(file_name):
     if not os.path.exists(file_path):
         print("File not found in shared directory.")
         return
-
+    
     file_size = os.path.getsize(file_path)
     chunks = split_file(file_path)
 
