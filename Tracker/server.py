@@ -110,6 +110,26 @@ def upload():
 
     return jsonify({"status": "files registered successfully"})
 
+@app.route('/files', methods=['GET'])
+def get_files():
+    conn = connect_db()
+    print(conn)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT file_hash, file_name, total_pieces FROM Files")
+    files = cursor.fetchall()
+
+    file_list = []
+    for file_hash, file_name, total_pieces in files:
+        file_list.append({
+            'file_hash': file_hash,
+            'file_name': file_name,
+            'total_pieces': total_pieces 
+        })
+
+    conn.close()
+    return jsonify(file_list)
+
 
 
 @app.route('/peers', methods=['GET'])

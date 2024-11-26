@@ -83,19 +83,24 @@ def register_file_with_tracker():
     
     # Split file into pieces
     pieces = split_file_into_pieces(file_path, piece_length)
-    for i, piece in enumerate(pieces):
-        print(f"Piece {i}: {file_pieces[piece]}")
 
     file_hash = calculate_file_hash(file_path)
     if not file_hash:
         print("Failed to calculate file hash. Exiting.")
         return
 
+    # Prepare the file status (assuming all pieces are available initially)
+    piece_status = [1, 0, 1, 0] 
+
     add_file(os.path.basename(file_path), file_hash, piece_length, total_pieces)
 
     data = {
         "port": PEER_PORT,
-        "files": [{"file_hash": file_hash, "pieces": pieces}]
+        "files": [{
+            "file_hash": file_hash,
+            "pieces": pieces,
+            "piece_status": piece_status  # Add piece status here
+        }]
     }
 
     try:

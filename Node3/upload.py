@@ -10,12 +10,12 @@ import time
 sys.path.append('D:/web_git/btl/torrent-file-sharing/Tracker')
 from database import add_file
 
-PEER_PORT = 5502 
+PEER_PORT = 5503 
 TRACKER_URL = "http://localhost:5500/upload"  
 BUFFER_SIZE = 1024
 
 file_pieces = {}
-piece_status = [1, 0, 1, 0] 
+piece_status = [0, 1, 0, 1] 
 
 def calculate_file_hash(file_path):
     sha1 = hashlib.sha1()
@@ -79,7 +79,7 @@ def split_file_into_pieces(file_path, piece_length):
     return pieces
 
 def register_file_with_tracker():
-    file_path = "D:/web_git/btl/torrent-file-sharing/Node2/example.txt"
+    file_path = "D:/web_git/btl/torrent-file-sharing/Node3/example.txt"
     piece_length = 1
     
     file_size = os.path.getsize(file_path)
@@ -117,8 +117,7 @@ def register_file_with_tracker():
         print(f"Error communicating with tracker: {e}")
 
 if __name__ == "__main__":
-    #os.makedirs("D:/web_git/btl/torrent-file-sharing/Node2/pieces", exist_ok=True)
-
+    #os.makedirs("D:/web_git/btl/torrent-file-sharing/Node3/pieces", exist_ok=True) 
 
     register_file_with_tracker()
     print(file_pieces)

@@ -5,7 +5,7 @@ import os
 
 TRACKER_URL = "http://127.0.0.1:5500"  
 BUFFER_SIZE = 1024
-DOWNLOAD_DIR = "D:/web_git/btl/torrent-file-sharing/Node2"  
+DOWNLOAD_DIR = "D:/web_git/btl/torrent-file-sharing/Node3"  
 FINAL_FILE_NAME = ""
 
 file_pieces = {}

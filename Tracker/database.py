@@ -1,10 +1,16 @@
 import sqlite3
 from datetime import datetime
 
-DB_NAME = "tracker.db"
+DB_NAME = "D:/web_git/btl/torrent-file-sharing/tracker.db"
 
 def connect_db():
-    return sqlite3.connect(DB_NAME)
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        return conn
+    except sqlite3.Error as e:
+        print(f"Database connection error: {e}")
+        raise
+
 
 def initialize_database():
     conn = connect_db()
