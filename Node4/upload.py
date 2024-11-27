@@ -10,7 +10,7 @@ import time
 sys.path.append('D:/web_git/btl/torrent-file-sharing/Tracker')
 from database import add_file
 
-PEER_PORT = 5502 
+PEER_PORT = 5504 
 TRACKER_URL = "http://localhost:5500/upload"  
 BUFFER_SIZE = 1024
 
@@ -41,10 +41,12 @@ def handle_client(conn, addr):
 
         if command == "GET":
             piece_index = int(args[0])
-            file_name = args[1]  
+            file_name = args[1]  # Assuming the file name is passed in the request
 
+            # Debugging: Print the requested piece and available pieces
             print(f"Requested piece {piece_index} for file {file_name}")
             if file_name in file_pieces:
+                print(f"Available pieces for {file_name}: {file_pieces[file_name]}")
                 if piece_index in file_pieces[file_name]:
                     conn.sendall(file_pieces[file_name][piece_index])
                     print(f"Sent piece {piece_index} of {file_name} to {addr}")
@@ -93,9 +95,11 @@ def split_file_into_pieces(file_path, piece_length, file_name):
             if piece_status[file_name][index] == 1:
                 file_pieces[file_name][index] = chunk
                 pieces.append(index)
+            print(f"Piece {index}: {'included' if piece_status[file_name][index] == 1 else 'excluded'}")  # Debugging
             index += 1
 
     print(f"File pieces for {file_name}: {file_pieces[file_name]}") 
+    print(file_pieces)
     return pieces
 
 
