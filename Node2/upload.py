@@ -64,8 +64,6 @@ def handle_client(conn, addr):
     finally:
         conn.close()
 
-
-
 def start_server(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.bind(("127.0.0.1", port))
@@ -80,9 +78,6 @@ def start_server(port):
 
 
 def split_file_into_pieces(file_path, piece_length, file_name):
-    """
-    Splits the file into pieces and respects piece_status.
-    """
     global file_pieces
     file_pieces[file_name] = {}
     pieces = []
@@ -98,12 +93,7 @@ def split_file_into_pieces(file_path, piece_length, file_name):
     print(f"File pieces for {file_name}: {file_pieces[file_name]}") 
     return pieces
 
-
-
 def manually_enter_piece_status(total_pieces):
-    """
-    Prompt the user to manually enter the piece status for a file.
-    """
     while True:
         try:
             status_input = input(
@@ -120,19 +110,14 @@ def manually_enter_piece_status(total_pieces):
 
 
 def register_and_upload_file(file_path, port):
-    """
-    Register and upload a single file with the tracker.
-    """
-    piece_length = 1  # Adjust this as needed
+    piece_length = 1  
     file_size = os.path.getsize(file_path)
     total_pieces = math.ceil(file_size / piece_length)
     file_name = os.path.basename(file_path)
     print(f"Processing {file_name} with {total_pieces} pieces.")
 
-    # Prompt user to manually enter piece_status
     piece_status[file_name] = manually_enter_piece_status(total_pieces)
 
-    # Split file into pieces based on piece_status
     pieces = split_file_into_pieces(file_path, piece_length, file_name)
 
     file_hash = calculate_file_hash(file_path)
@@ -140,14 +125,13 @@ def register_and_upload_file(file_path, port):
         print(f"Failed to calculate hash for {file_path}. Skipping...")
         return
 
-    # Add file details to the tracker
     add_file(file_name, file_hash, piece_length, total_pieces)
 
     data = {
         "port": port,
         "files": [{
             "file_hash": file_hash,
-            "pieces": pieces,  # Only include available pieces
+            "pieces": pieces, 
         }]
     }
 
@@ -163,11 +147,7 @@ def register_and_upload_file(file_path, port):
 
 
 def select_files():
-    """
-    List files in the current directory and prompt the user to select one or more files.
-    Returns a list of file paths selected by the user.
-    """
-    directory = os.getcwd()  # You can specify a directory if needed
+    directory = os.getcwd() 
     files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 
     if not files:
@@ -190,18 +170,15 @@ def select_files():
 
 
 if __name__ == "__main__":
-    # Step 1: Let the user select files
     selected_files = select_files()
 
     if not selected_files:
         print("No files selected for upload. Exiting...")
         exit()
 
-    # Step 2: Register and upload each selected file
     for file_path in selected_files:
         register_and_upload_file(file_path, PEER_PORT)
 
-    # Step 3: Start the peer server
     print("Files and piece statuses:", piece_status)
     start_server(PEER_PORT)
     print("Peer is now ready to upload files.")
