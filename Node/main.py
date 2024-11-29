@@ -4,7 +4,10 @@ TRACKER_URL = "http://localhost:5500/announce"
 PEER_PORT = 5501
 
 def register_peer():
+    print("Please enter your IP: ")
+    peer_ip = str(input())
     data = {
+        "ip":peer_ip,
         "port": PEER_PORT,
         "files": []  
     }
