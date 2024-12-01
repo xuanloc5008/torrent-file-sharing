@@ -6,12 +6,13 @@ from datetime import datetime
 app = Flask(__name__)
 
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'network',
-    'password': 'baykhivadegia',
+    'host': 'truntrun.ddns.net',
+    'user': 'tuanemtramtinh',
+    'password': 'TuanAnh_0908',
     'database': 'assignment',
-    'port': 3300  
+    'port': 3306  
 }
+
 
 def connect_db():
     try:
@@ -64,7 +65,7 @@ def announce():
 @app.route('/upload', methods=['POST'])
 def upload():
     data = request.json
-    peer_ip = request.remote_addr
+    peer_ip = "192.168.83.48"
     peer_port = data.get("port")
     files = data.get("files", []) 
 

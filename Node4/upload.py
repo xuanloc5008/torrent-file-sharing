@@ -7,10 +7,10 @@ import hashlib
 import math
 import time
 
-sys.path.append('D:/web_git/btl/torrent-file-sharing/Tracker')
-from database import add_file
+sys.path.append('/Users/xuanloc/Documents/GitHub/torrent-file-sharing/Tracker')
+from database import add_file, get_file_id_by_hash, add_file_piece
 
-PEER_PORT = 5504 
+PEER_PORT = 5504
 TRACKER_URL = "http://localhost:5500/upload"  
 BUFFER_SIZE = 1024
 
@@ -66,7 +66,7 @@ def handle_client(conn, addr):
 
 def start_server(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-        server.bind(("127.0.0.1", port))
+        server.bind(("192.168.83.48", port))
         server.listen(5)
         print(f"Peer server started on port {port}")
 

@@ -2,44 +2,34 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 
-# Database Configuration
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'network',
-    'password': 'baykhivadegia',
+    'host': 'truntrun.ddns.net',
+    'user': 'tuanemtramtinh',
+    'password': 'TuanAnh_0908',
     'database': 'assignment',
-    'port': 3300  # Ensure your container exposes this port
+    'port': 3306  
 }
 
-# Connect to the Database
+# Connect to the database
 def connect_db():
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
-        print("Connection successful:", conn)
         return conn
     except Error as e:
         print(f"Database connection error: {e}")
         raise
 
-# Initialize Database and Tables
+# Initialize database and tables
 def initialize_database():
     try:
-        conn = mysql.connector.connect(
-            host=DB_CONFIG['host'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password'],
-            port=DB_CONFIG['port']
-        )
+        conn = connect_db()
         cursor = conn.cursor()
 
-        # Create Database if not exists
-        print("Creating database...")
+        # Create database if it doesn't exist
         cursor.execute("CREATE DATABASE IF NOT EXISTS assignment")
-        print("Database created (if not exists).")
-        conn.database = "assignment"  # Explicitly select the database
+        conn.database = "assignment"  # Select the database
 
         # Create Files table
-        print("Creating Files table...")
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS Files (
             file_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,10 +39,8 @@ def initialize_database():
             total_pieces INT NOT NULL
         )
         ''')
-        print("Files table created.")
 
         # Create Peers table
-        print("Creating Peers table...")
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS Peers (
             peer_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -61,10 +49,8 @@ def initialize_database():
             last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        print("Peers table created.")
 
         # Create File_Pieces table
-        print("Creating File_Pieces table...")
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS File_Pieces (
             file_id INT,
@@ -75,7 +61,6 @@ def initialize_database():
             FOREIGN KEY (peer_id) REFERENCES Peers(peer_id) ON DELETE CASCADE
         )
         ''')
-        print("File_Pieces table created.")
 
         conn.commit()
         print("Database and tables initialized successfully!")
@@ -86,7 +71,7 @@ def initialize_database():
             cursor.close()
             conn.close()
 
-# Insert a new file
+# Add a new file
 def add_file(file_name, file_hash, piece_length, total_pieces):
     conn = connect_db()
     cursor = conn.cursor()
@@ -103,7 +88,7 @@ def add_file(file_name, file_hash, piece_length, total_pieces):
         cursor.close()
         conn.close()
 
-# Insert a new peer
+# Add a new peer
 def add_peer(ip, port):
     conn = connect_db()
     cursor = conn.cursor()
@@ -117,7 +102,7 @@ def add_peer(ip, port):
     cursor.close()
     conn.close()
 
-# Insert a new file piece
+# Add a new file piece
 def add_file_piece(file_id, peer_id, piece_index):
     conn = connect_db()
     cursor = conn.cursor()
@@ -156,24 +141,3 @@ def get_file_id_by_hash(file_hash):
     cursor.close()
     conn.close()
     return result[0] if result else None
-
-# Main Function to Test the Script
-if __name__ == "__main__":
-    try:
-        # Initialize the database and tables
-        initialize_database()
-
-        # Add test data
-        add_file("example_file.txt", "abc123", 512, 10)
-        add_peer("192.168.1.1", 8080)
-
-        # Add a file piece
-        file_id = get_file_id_by_hash("abc123")
-        if file_id:
-            add_file_piece(file_id, 1, 0)  # Assuming peer_id = 1
-
-        # Fetch peers with a specific file piece
-        peers = get_peers_with_piece(file_id, 0)
-        print(f"Peers with piece 0 of file_id {file_id}: {peers}")
-    except Exception as e:
-        print(f"Error: {e}")
