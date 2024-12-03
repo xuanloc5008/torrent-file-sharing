@@ -6,7 +6,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
-TRACKER_URL = "http://127.0.0.1:5500" 
+TRACKER_URL = "https://e825-2001-ee0-4f98-87b0-ec4f-d0bc-297b-2623.ngrok-free.app" 
 BUFFER_SIZE = 1024  
 DOWNLOAD_DIR = os.getcwd()  
 file_pieces = {} 

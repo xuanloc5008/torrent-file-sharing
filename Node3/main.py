@@ -1,6 +1,6 @@
 import requests
 
-TRACKER_URL = "http://localhost:5500/announce"
+TRACKER_URL = "https://e825-2001-ee0-4f98-87b0-ec4f-d0bc-297b-2623.ngrok-free.app/announce"
 PEER_PORT = 5503
 
 def register_peer():
