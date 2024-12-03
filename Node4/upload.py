@@ -10,7 +10,7 @@ import time
 sys.path.append('/Users/xuanloc/Documents/GitHub/torrent-file-sharing/Tracker')
 from database import add_file, get_file_id_by_hash, add_file_piece
 
-PEER_PORT = 5504
+PEER_PORT = 5503
 TRACKER_URL = "https://e825-2001-ee0-4f98-87b0-ec4f-d0bc-297b-2623.ngrok-free.app/upload"  
 BUFFER_SIZE = 1024
 
@@ -127,10 +127,9 @@ def register_and_upload_file(file_path, port):
         return
 
     add_file(file_name, file_hash, piece_length, total_pieces)
-
     data = {
-        "ip":ip,
         "port": port,
+        "ip": ip,
         "files": [{
             "file_hash": file_hash,
             "pieces": pieces, 

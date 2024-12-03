@@ -127,11 +127,10 @@ def register_and_upload_file(file_path, port):
         return
 
     add_file(file_name, file_hash, piece_length, total_pieces)
-
     data = {
         "port": port,
+        "ip": ip,
         "files": [{
-            "ip":ip,
             "file_hash": file_hash,
             "pieces": pieces, 
         }]
