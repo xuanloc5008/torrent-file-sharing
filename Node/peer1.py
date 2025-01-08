@@ -52,13 +52,18 @@ def register_peer():
 def split_file_into_pieces(file_path, piece_length, file_name):
     global file_pieces
     file_pieces[file_name] = {}
+    pieces = []
+
     with open(file_path, "rb") as file:
         index = 0
         while chunk := file.read(piece_length):
             if piece_status[file_name][index] == 1:
                 file_pieces[file_name][index] = chunk
+                pieces.append(index)
             index += 1
-    return list(file_pieces[file_name].keys())
+
+    print(f"File pieces for {file_name}: {file_pieces[file_name]}") 
+    return pieces
 
 
 def manually_enter_piece_status(total_pieces):
@@ -78,100 +83,73 @@ def manually_enter_piece_status(total_pieces):
 
 
 def upload_file():
-    file_path = input("Enter the path of the file to upload: ").strip()
-    if not os.path.exists(file_path):
-        print("File not found. Please try again.")
+    def select_files():
+        directory = os.getcwd()
+        files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+
+        if not files:
+            print("No files found in the current directory.")
+            return []
+
+        print("Available files:")
+        for idx, file_name in enumerate(files, start=1):
+            print(f"{idx}. {file_name}")
+
+        while True:
+            try:
+                selected_indices = input("Enter the numbers of the files to upload (comma-separated): ")
+                selected_indices = [int(x.strip()) - 1 for x in selected_indices.split(",")]
+                selected_files = [os.path.join(directory, files[i]) for i in selected_indices]
+                return selected_files
+            except (ValueError, IndexError):
+                print("Invalid input. Please enter valid numbers corresponding to the files.")
+
+    selected_files = select_files()
+
+    if not selected_files:
+        print("No files selected for upload. Exiting...")
         return
 
-    piece_length = 1  # Define the size of each piece in bytes
-    file_size = os.path.getsize(file_path)
-    total_pieces = math.ceil(file_size / piece_length)
-    file_name = os.path.basename(file_path)
+    for file_path in selected_files:
+        if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
+            continue
 
-    print(f"Processing {file_name} with {total_pieces} pieces.")
-    piece_status[file_name] = manually_enter_piece_status(total_pieces)
-    pieces = split_file_into_pieces(file_path, piece_length, file_name)
+        piece_length = 1  
+        file_size = os.path.getsize(file_path)
+        total_pieces = math.ceil(file_size / piece_length)
+        file_name = os.path.basename(file_path)
 
-    file_hash = calculate_file_hash(file_path)
-    if not file_hash:
-        print("Failed to calculate file hash. Skipping...")
-        return
+        print(f"Processing {file_name} with {total_pieces} pieces.")
+        piece_status[file_name] = manually_enter_piece_status(total_pieces)
 
-    data = {
-        "port": PEER_PORT,
-        "ip": input("Enter your IP address: ").strip(),
-        "files": [{
-            "file_hash": file_hash,
-            "pieces": pieces,
-        }]
-    }
+        pieces = split_file_into_pieces(file_path, piece_length, file_name)
+        file_hash = calculate_file_hash(file_path)
 
-    try:
-        response = requests.post(f"{TRACKER_URL}/upload", json=data)
-        response.raise_for_status()
-        print(f"File {file_name} successfully registered with tracker:", response.json())
-    except requests.HTTPError as e:
-        print(f"HTTP error during tracker registration: {e}")
-    except requests.RequestException as e:
-        print(f"Error communicating with tracker: {e}")
+        if not file_hash:
+            print(f"Failed to calculate hash for {file_name}. Skipping...")
+            continue
 
+        data = {
+            "port": PEER_PORT,
+            "ip": input("Enter your IP address: ").strip(),
+            "files": [{
+                "file_hash": file_hash,
+                "pieces": pieces,
+            }]
+        }
 
-def download_file():
-    file_name = input("Enter the name of the file to download: ").strip()
-    file_hash = input("Enter the file hash: ").strip()
-    total_pieces = int(input("Enter the total number of pieces: ").strip())
+        try:
+            response = requests.post(f"{TRACKER_URL}/upload", json=data)
+            response.raise_for_status()
+            print(f"File {file_name} successfully registered with tracker:", response.json())
+        except requests.HTTPError as e:
+            print(f"HTTP error during tracker registration for {file_name}: {e}")
+            print(f"Response content: {e.response.text}")
+        except requests.RequestException as e:
+            print(f"Error communicating with tracker for {file_name}: {e}")
 
-    try:
-        response = requests.get(f"{TRACKER_URL}/peers", params={"file_hash": file_hash})
-        response.raise_for_status()
-        file_info = response.json()
-    except requests.RequestException as e:
-        print(f"Error querying tracker: {e}")
-        return
-
-    aggregated_pieces = {}
-    for piece_index, peers in file_info.get("pieces", {}).items():
-        if piece_index not in aggregated_pieces:
-            aggregated_pieces[int(piece_index)] = set()
-        aggregated_pieces[int(piece_index)].update(peers)
-
-    missing_pieces = set(range(total_pieces)) - set(aggregated_pieces.keys())
-    if missing_pieces:
-        print(f"Error: Missing pieces {missing_pieces}. Cannot complete download.")
-        return
-
-    threads = []
-    for piece_index, peers in aggregated_pieces.items():
-        for peer in peers:
-            peer_ip, peer_port = peer.split(":")
-            thread = threading.Thread(target=lambda: download_piece(peer_ip, peer_port, piece_index, file_name))
-            threads.append(thread)
-            thread.start()
-            break
-
-    for thread in threads:
-        thread.join()
-
-    output_file = os.path.join(os.getcwd(), file_name)
-    with open(output_file, "wb") as f:
-        for piece_index in sorted(file_pieces.keys()):
-            f.write(file_pieces[piece_index])
-
-    print(f"Download completed for {file_name}. File saved as {output_file}.")
-
-
-def download_piece(peer_ip, peer_port, piece_index, file_name):
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
-            client.connect((peer_ip, int(peer_port)))
-            client.sendall(f"GET {piece_index} {file_name}\n".encode())
-            data = b""
-            while chunk := client.recv(BUFFER_SIZE):
-                data += chunk
-            file_pieces[piece_index] = data
-            print(f"Successfully downloaded piece {piece_index} from {peer_ip}:{peer_port}")
-    except Exception as e:
-        print(f"Error downloading piece {piece_index} from {peer_ip}:{peer_port}: {e}")
+    print("Files and piece statuses:", piece_status)
 
 
 def start_server():
@@ -209,9 +187,8 @@ def main():
         print("\n=== Torrent CLI ===")
         print("1. Register Peer")
         print("2. Upload File")
-        print("3. Download File")
-        print("4. Start Peer Server")
-        print("5. Exit")
+        print("3. Start Peer Server")
+        print("4. Exit")
 
         choice = input("Choose an option: ").strip()
 
@@ -220,14 +197,13 @@ def main():
         elif choice == "2":
             upload_file()
         elif choice == "3":
-            download_file
-        elif choice == "4":
             start_server()
-        elif choice == "5":
+        elif choice == "4":
             print("Exiting... Goodbye!")
             sys.exit(0)
         else:
             print("Invalid choice. Please try again.")
+
 
 if __name__ == "__main__":
     main()
