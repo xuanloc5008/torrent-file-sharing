@@ -6,8 +6,10 @@ import hashlib
 import math
 import sys
 import logging
-
+sys.path.append('/Users/xuanloc/Documents/GitHub/torrent-file-sharing/Tracker')
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+directory = os.getcwd()
+from database import add_file, get_file_id_by_hash, add_file_piece
 
 TRACKER_URL = "https://ecf8-14-241-225-112.ngrok-free.app"
 PEER_PORT = 5501
@@ -81,77 +83,6 @@ def manually_enter_piece_status(total_pieces):
         except ValueError as e:
             print(f"Error: {e}. Please try again.")
 
-
-def upload_file():
-    def select_files():
-        directory = os.getcwd()
-        files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-
-        if not files:
-            print("No files found in the current directory.")
-            return []
-
-        print("Available files:")
-        for idx, file_name in enumerate(files, start=1):
-            print(f"{idx}. {file_name}")
-
-        while True:
-            try:
-                selected_indices = input("Enter the numbers of the files to upload (comma-separated): ")
-                selected_indices = [int(x.strip()) - 1 for x in selected_indices.split(",")]
-                selected_files = [os.path.join(directory, files[i]) for i in selected_indices]
-                return selected_files
-            except (ValueError, IndexError):
-                print("Invalid input. Please enter valid numbers corresponding to the files.")
-
-    selected_files = select_files()
-
-    if not selected_files:
-        print("No files selected for upload. Exiting...")
-        return
-
-    for file_path in selected_files:
-        if not os.path.exists(file_path):
-            print(f"File not found: {file_path}")
-            continue
-
-        piece_length = 1  
-        file_size = os.path.getsize(file_path)
-        total_pieces = math.ceil(file_size / piece_length)
-        file_name = os.path.basename(file_path)
-
-        print(f"Processing {file_name} with {total_pieces} pieces.")
-        piece_status[file_name] = manually_enter_piece_status(total_pieces)
-
-        pieces = split_file_into_pieces(file_path, piece_length, file_name)
-        file_hash = calculate_file_hash(file_path)
-
-        if not file_hash:
-            print(f"Failed to calculate hash for {file_name}. Skipping...")
-            continue
-
-        data = {
-            "port": PEER_PORT,
-            "ip": input("Enter your IP address: ").strip(),
-            "files": [{
-                "file_hash": file_hash,
-                "pieces": pieces,
-            }]
-        }
-
-        try:
-            response = requests.post(f"{TRACKER_URL}/upload", json=data)
-            response.raise_for_status()
-            print(f"File {file_name} successfully registered with tracker:", response.json())
-        except requests.HTTPError as e:
-            print(f"HTTP error during tracker registration for {file_name}: {e}")
-            print(f"Response content: {e.response.text}")
-        except requests.RequestException as e:
-            print(f"Error communicating with tracker for {file_name}: {e}")
-
-    print("Files and piece statuses:", piece_status)
-
-
 def start_server():
     peer_ip = input("Enter your IP address: ").strip()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
@@ -162,6 +93,64 @@ def start_server():
         while True:
             conn, addr = server.accept()
             threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+
+def select_files():
+    directory = os.getcwd() 
+    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+
+    if not files:
+        print("No files found in the directory.")
+        return []
+
+    print("Available files:")
+    for idx, file_name in enumerate(files, start=1):
+        print(f"{idx}. {file_name}")
+
+    while True:
+        try:
+            selected_indices = input("Enter the numbers of the files to upload (comma-separated): ")
+            selected_indices = [int(x.strip()) - 1 for x in selected_indices.split(",")]
+            selected_files = [os.path.join(directory, files[i]) for i in selected_indices]
+            return selected_files
+        except (ValueError, IndexError):
+            print("Invalid input. Please enter valid numbers corresponding to the files.")
+
+def register_and_upload_file(file_path, port, ip):
+    piece_length = 1  
+    file_size = os.path.getsize(file_path)
+    total_pieces = math.ceil(file_size / piece_length)
+    file_name = os.path.basename(file_path)
+    print(f"Processing {file_name} with {total_pieces} pieces.")
+
+    piece_status[file_name] = manually_enter_piece_status(total_pieces)
+
+    pieces = split_file_into_pieces(file_path, piece_length, file_name)
+
+    file_hash = calculate_file_hash(file_path)
+    if not file_hash:
+        print(f"Failed to calculate hash for {file_path}. Skipping...")
+        return
+
+    add_file(file_name, file_hash, piece_length, total_pieces)
+    data = {
+        "port": port,
+        "ip": ip,
+        "files": [{
+            "file_hash": file_hash,
+            "pieces": pieces, 
+        }]
+    }
+
+    try:
+        response = requests.post(f"{TRACKER_URL}/upload", json=data)
+        response.raise_for_status()
+        print(f"File {file_name} successfully registered with tracker:", response.json())
+    except requests.HTTPError as e:
+        print(f"HTTP error during tracker registration for {file_path}: {e}")
+        print(f"Response content: {e.response.text}")
+    except requests.RequestException as e:
+        print(f"Error communicating with tracker for {file_path}: {e}")
+
 
 
 def handle_client(conn, addr):
@@ -195,7 +184,18 @@ def main():
         if choice == "1":
             register_peer()
         elif choice == "2":
-            upload_file()
+            print("Please input your IP address: ")
+            ip = str(input()).strip()
+
+            selected_files = select_files()
+
+            if not selected_files:
+                print("No files selected for upload. Exiting...")
+                exit()
+
+            for file_path in selected_files:
+                register_and_upload_file(file_path, PEER_PORT, ip)
+
         elif choice == "3":
             start_server()
         elif choice == "4":
